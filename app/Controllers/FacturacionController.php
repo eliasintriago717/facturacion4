@@ -6,8 +6,6 @@ use App\Models\VentaModel;
 use App\Models\DetalleVentaModel;
 use App\Models\ClienteModel;
 use App\Models\ProductoModel;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 
 class FacturacionController extends BaseController
 {
@@ -82,8 +80,8 @@ class FacturacionController extends BaseController
         }
 
         $idCliente = $this->request->getPost('id_cliente');
-        $productos = $this->request->getPost('productos'); 
-        $idUsuario = session()->get('id_usuario') ?? 1; 
+        $productos = $this->request->getPost('productos'); // Array con id_producto, cantidad, precio_unitario
+        $idUsuario = session()->get('id_usuario') ?? 1; // ID del usuario autenticado en sesión
 
         if (empty($idCliente)) {
             return $this->response->setJSON(['status' => 'error', 'message' => 'Debe seleccionar un cliente.']);
@@ -93,6 +91,7 @@ class FacturacionController extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => 'Debe agregar al menos un producto a la factura.']);
         }
 
+        // Validación estricta de stock antes de iniciar la transacción
         $totalVenta = 0;
         $detallesProcesados = [];
 
@@ -127,15 +126,18 @@ class FacturacionController extends BaseController
             ];
         }
 
+        // Inicio de transacción de base de datos
         $db = \Config\Database::connect();
         $db->transStart();
 
+        // 1. Guardar Cabecera
         $idVenta = $this->ventaModel->insert([
             'id_cliente' => $idCliente,
             'id_usuario' => $idUsuario,
             'total'      => $totalVenta
         ]);
 
+        // 2. Guardar Detalles y Descontar Stock
         foreach ($detallesProcesados as $det) {
             $this->detalleVentaModel->insert([
                 'id_venta'        => $idVenta,
@@ -145,6 +147,7 @@ class FacturacionController extends BaseController
                 'subtotal'        => $det['subtotal']
             ]);
 
+            // Descontar stock
             $nuevoStock = $det['stock_actual'] - $det['cantidad'];
             $this->productoModel->update($det['id_producto'], ['stock' => $nuevoStock]);
         }
@@ -186,46 +189,25 @@ class FacturacionController extends BaseController
             'detalles' => $detalles
         ]);
     }
-
-    // ==========================================
-    // MÉTODO PARA GENERAR E IMPRIMIR EL PDF
-    // ==========================================
-    public function descargarPdf($idVenta)
+    public function imprimir($id)
     {
-        // 1. Obtener la venta con información del cliente y usuario
-        $venta = $this->ventaModel->select('venta.*, cliente.nombre AS cliente_nombre, cliente.identificacion AS cliente_identificacion, usuario.nombre AS usuario_nombre')
+        $venta = $this->ventaModel->select('venta.*, cliente.nombre AS cliente_nombre, cliente.identificacion AS cliente_identificacion, cliente.direccion, cliente.telefono, cliente.correo, usuario.nombre AS usuario_nombre')
                                   ->join('cliente', 'cliente.id_cliente = venta.id_cliente')
                                   ->join('usuario', 'usuario.id_usuario = venta.id_usuario')
-                                  ->where('venta.id_venta', $idVenta)
+                                  ->where('venta.id_venta', $id)
                                   ->first();
 
         if (!$venta) {
-            return redirect()->back()->with('error', 'Factura no encontrada');
+            return redirect()->to(base_url('facturacion'))->with('error', 'Factura no encontrada.');
         }
 
-        // 2. Obtener los detalles de la venta
-        $detalles = $this->detalleVentaModel->getDetallesPorVenta($idVenta);
+        $detalles = $this->detalleVentaModel->getDetallesPorVenta($id);
 
-        // 3. Configurar Dompdf
-        $options = new Options();
-        $options->set('isRemoteEnabled', true);
-        $options->set('isHtml5ParserEnabled', true);
-        $dompdf = new Dompdf($options);
-
-        // 4. Pasar los datos a la plantilla HTML
         $data = [
             'venta'    => $venta,
             'detalles' => $detalles
         ];
-        
-        $html = view('facturas/pdf_template', $data);
 
-        // 5. Generar y emitir el PDF
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        $dompdf->stream("Factura_" . $idVenta . ".pdf", ["Attachment" => false]);
-        exit();
+        return view('facturacion/factura_pdf', $data);
     }
 }

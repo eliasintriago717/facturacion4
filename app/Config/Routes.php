@@ -24,9 +24,12 @@ $routes->group('', ['filter' => ['auth', 'role:administrador,encargado']], stati
     $routes->get('dashboard', 'Home::index');
     $routes->get('facturas', 'FacturacionController::index');
     $routes->get('facturas/nueva', 'FacturacionController::index');
-    
-    // Ruta para generar/descargar PDF de la factura
-    $routes->get('facturas/pdf/(:num)', 'FacturacionController::descargarPdf/$1');
+    $routes->get('facturacion/imprimir/(:num)', 'FacturacionController::imprimir/$1');
+});
+
+// Endpoints AJAX - Dashboard
+$routes->group('dashboard', ['filter' => ['auth', 'ajax', 'role:administrador,encargado']], static function ($routes) {
+    $routes->get('data', 'Home::getDashboardData');
 });
 
 // Endpoints AJAX - Facturación
@@ -46,6 +49,7 @@ $routes->group('admin', ['filter' => ['auth', 'role:administrador']], static fun
     $routes->get('marcas', 'MarcasController::index');
     $routes->get('clientes', 'ClientesController::index');
     $routes->get('proveedores', 'ProveedoresController::index');
+    $routes->get('compras', 'CompraController::index');
     $routes->get('usuarios', 'UsuariosController::index');
     $routes->get('productos', 'ProductosController::index');
 });
@@ -77,6 +81,14 @@ $routes->group('proveedores', ['filter' => ['auth', 'ajax', 'role:administrador'
     $routes->post('guardar', 'ProveedoresController::guardar');
     $routes->get('obtener/(:num)', 'ProveedoresController::obtener/$1');
     $routes->delete('eliminar/(:num)', 'ProveedoresController::eliminar/$1');
+});
+
+$routes->group('compras', ['filter' => ['auth', 'ajax', 'role:administrador']], static function ($routes) {
+    $routes->get('getCompras', 'CompraController::getCompras');
+    $routes->get('buscarProveedores', 'CompraController::buscarProveedores');
+    $routes->get('buscarProductos', 'CompraController::buscarProductos');
+    $routes->post('guardar', 'CompraController::guardar');
+    $routes->get('obtener/(:num)', 'CompraController::obtener/$1');
 });
 
 $routes->group('usuarios', ['filter' => ['auth', 'ajax', 'role:administrador']], static function ($routes) {

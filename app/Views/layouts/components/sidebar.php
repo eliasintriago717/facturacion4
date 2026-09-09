@@ -57,16 +57,23 @@
                     </li>
 
                     <li class="nav-item">
-                        <a href="<?= base_url('admin/usuarios') ?>" class="nav-link <?= url_is('admin/usuarios*') ? 'active' : '' ?>">
-                            <i class="nav-icon bi bi-person-gear"></i>
-                            <p>Usuarios</p>
+                        <a href="<?= base_url('admin/productos') ?>" class="nav-link <?= url_is('admin/productos*') ? 'active' : '' ?>">
+                            <i class="nav-icon bi bi-box-seam"></i>
+                            <p>Productos</p>
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a href="<?= base_url('admin/productos') ?>" class="nav-link <?= url_is('admin/productos*') ? 'active' : '' ?>">
-                            <i class="nav-icon bi bi-box-seam"></i>
-                            <p>Productos</p>
+                        <a href="<?= base_url('admin/compras') ?>" class="nav-link <?= url_is('admin/compras*') ? 'active' : '' ?>">
+                            <i class="nav-icon bi bi-bag-plus"></i>
+                            <p>Compras</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="<?= base_url('admin/usuarios') ?>" class="nav-link <?= url_is('admin/usuarios*') ? 'active' : '' ?>">
+                            <i class="nav-icon bi bi-person-gear"></i>
+                            <p>Usuarios</p>
                         </a>
                     </li>
 
